@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mobile Sender</title>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+      background: #f7f7f7;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    input {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: #ff385c;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-size: 14px;
+      color: green;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="card">
+      <h2>Send Barcode</h2>
+
+      <input id="targetId" placeholder="Enter Laptop ID" />
+      <button onclick="connect()">Connect</button>
+
+      <input id="barcodeInput" placeholder="Scan or type barcode..." />
+
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <script>
+    const peer = new Peer();
+    let conn;
+    let lastCode = null;
+
+    function connect() {
+      const id = document.getElementById("targetId").value;
+      conn = peer.connect(id);
+
+      conn.on('open', () => {
+        document.getElementById("status").innerText = "✅ Connected";
+      });
+    }
+
+    const input = document.getElementById("barcodeInput");
+
+    input.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        sendData(input.value);
+        input.value = "";
+      }
+    });
+
+    let timeout;
+    input.addEventListener("input", function() {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        if (input.value.length > 3) {
+          sendData(input.value);
+          input.value = "";
+        }
+      }, 300);
+    });
+
+    function sendData(code) {
+      if (!conn || !conn.open) return;
+      if (code === lastCode) return;
+
+      lastCode = code;
+
+      conn.send(code);
+
+      document.getElementById("status").innerText = "Sent: " + code;
+
+      // 🔊 feedback
+      navigator.vibrate?.(100);
+    }
+  </script>
+</body>
+</html>
